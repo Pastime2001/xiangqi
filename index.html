@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1c1714">
+<title>中国象棋 · 单机 + 面对面联机</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+  body {
+    font-family: "Songti SC", "STSong", "SimSun", "Noto Serif SC", serif;
+    background: radial-gradient(circle at 50% 0%, #3d3128 0%, #1c1714 55%, #100d0b 100%);
+    color: #e8dcc8;
+    display: flex; align-items: center; justify-content: center;
+    padding: 22px; min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+  .hidden { display: none !important; }
+
+  /* ============ 开始页 ============ */
+  .home-screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px;
+    background: radial-gradient(circle at 50% 0%, #3d3128 0%, #1c1714 55%, #100d0b 100%);
+    z-index: 100; overflow-y: auto;
+  }
+  .home-title {
+    font-size: 42px; letter-spacing: 16px; font-weight: 700; color: #d8b56a;
+    text-shadow: 0 2px 20px rgba(0,0,0,.9);
+    margin-bottom: 6px; padding-left: 16px;
+    font-family: "KaiTi", "STKaiti", "Kaiti SC", serif;
+    user-select: none;
+  }
+  .home-subtitle {
+    font-size: 12px; letter-spacing: 4px; color: #9d8e7c;
+    margin-bottom: 44px; user-select: none;
+  }
+  .home-panel { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 12px; }
+  .home-big-btn {
+    font-family: inherit; font-size: 17px; letter-spacing: 4px;
+    padding: 16px 0;
+    background: linear-gradient(160deg, rgba(58,47,38,.92), rgba(34,27,22,.95));
+    color: #e8dcc8;
+    border: 1px solid rgba(200,162,74,.4);
+    border-radius: 10px;
+    cursor: pointer; transition: all .2s;
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .home-big-btn:hover { background: rgba(200,162,74,.18); color: #f0dfb8; border-color: rgba(200,162,74,.7); }
+  .home-big-btn.primary {
+    background: linear-gradient(180deg, #c8a24a, #a3803a);
+    color: #241c12; font-weight: 700; border-color: #e0c078;
+    box-shadow: 0 0 24px rgba(200,162,74,.35);
+  }
+  .home-label { font-size: 13px; letter-spacing: 3px; color: #c8a24a; text-align: center; margin: 6px 0 2px; }
+  .home-diffs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .home-diffs button {
+    font-family: inherit; font-size: 15px; letter-spacing: 2px;
+    padding: 14px 0;
+    background: rgba(255,255,255,.04); color: #cdbfa8;
+    border: 1px solid rgba(200,162,74,.3); border-radius: 8px;
+    cursor: pointer; transition: all .18s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .home-diffs button.active {
+    background: linear-gradient(180deg, #c8a24a, #a3803a);
+    color: #241c12; font-weight: 700; border-color: #e0c078;
+    box-shadow: 0 0 16px rgba(200,162,74,.4);
+  }
+  .home-back {
+    font-family: inherit; font-size: 13px; letter-spacing: 2px;
+    padding: 10px 0; background: transparent; color: #9d8e7c;
+    border: none; cursor: pointer; margin-top: 4px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .online-status { font-size: 13px; color: #b8a894; line-height: 1.6; text-align: center; padding: 4px 0; }
+  .online-actions { display: flex; flex-direction: column; gap: 10px; }
+  .room-code {
+    font-size: 26px; font-weight: 700; letter-spacing: 4px;
+    color: #d8b56a; text-align: center; padding: 14px;
+    background: rgba(0,0,0,.3); border-radius: 8px;
+    word-break: break-all; font-family: "Courier New", monospace;
+    user-select: all; margin-top: 4px;
+  }
+  .online-input {
+    width: 100%; padding: 12px; border-radius: 8px;
+    border: 1px solid rgba(200,162,74,.3);
+    background: rgba(255,255,255,.05); color: #e8dcc8;
+    font-family: inherit; font-size: 15px;
+    text-align: center; letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .online-input:focus { outline: none; border-color: #c8a24a; }
+  .online-input::placeholder { text-transform: none; letter-spacing: 1px; }
+
+  /* ============ 桌面端布局 ============ */
+  .wrap { display: flex; gap: 24px; align-items: flex-start; max-width: 100%; }
+  .board-area { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .title {
+    font-size: 25px; letter-spacing: 12px; font-weight: 700; color: #d8b56a;
+    text-shadow: 0 2px 10px rgba(0,0,0,.85); padding-left: 12px;
+    font-family: "KaiTi", "STKaiti", "Kaiti SC", serif;
+    user-select: none;
+  }
+  #board {
+    display: block; border-radius: 7px; cursor: pointer;
+    box-shadow: 0 18px 50px rgba(0,0,0,.7), 0 0 0 1px rgba(200,162,74,.35);
+    width: 548px; max-width: 100%; height: auto;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation; user-select: none;
+  }
+  .side { width: 268px; display: flex; flex-direction: column; gap: 14px; flex-shrink: 0; }
+  .panel {
+    background: linear-gradient(160deg, rgba(58,47,38,.92), rgba(34,27,22,.95));
+    border: 1px solid rgba(200,162,74,.28);
+    border-radius: 8px; padding: 13px 15px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 6px 18px rgba(0,0,0,.4);
+  }
+  .panel-title {
+    font-size: 13px; letter-spacing: 3px; color: #c8a24a; margin-bottom: 9px;
+    border-left: 3px solid #c8a24a; padding-left: 8px; font-weight: 700;
+  }
+  .status { font-size: 16px; letter-spacing: 1px; font-weight: 700; padding: 3px 0; }
+  .status.s-red { color: #e8705f; }
+  .status.s-black { color: #a9b8c9; }
+  .status.s-over { color: #d8b56a; }
+  .tip { font-size: 12.5px; color: #9d8e7c; margin-top: 7px; line-height: 1.65; min-height: 36px; }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btns button {
+    font-family: inherit; font-size: 13.5px; letter-spacing: 1.5px; cursor: pointer;
+    background: rgba(255,255,255,.04); color: #cdbfa8;
+    border: 1px solid rgba(200,162,74,.3); border-radius: 6px;
+    padding: 8px 0; transition: all .18s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .btns button:hover { background: rgba(200,162,74,.18); color: #f0dfb8; }
+  .btns button.on { border-color: #7fbf8f; color: #a8e0b6; }
+  .btns button.wide { grid-column: span 2; }
+  .rule { font-size: 12.5px; line-height: 1.8; color: #b8a894; min-height: 76px; }
+
+  /* 聊天（桌面） */
+  .chat-panel { display: none; }
+  .chat-panel.visible { display: block; }
+  .chat-header {
+    display: flex; align-items: center;
+    cursor: pointer; padding: 0 0 0 8px;
+    border-left: 3px solid #c8a24a;
+    font-size: 13px; letter-spacing: 3px; color: #c8a24a;
+    font-weight: 700; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color .18s;
+  }
+  .chat-header:hover { color: #f0dfb8; }
+  .chat-panel.expanded .chat-header { margin-bottom: 9px; }
+  .chat-badge {
+    display: none; background: #c8423a; color: #fff;
+    font-size: 10px; font-weight: 700;
+    min-width: 16px; height: 16px; line-height: 16px;
+    border-radius: 8px; padding: 0 5px;
+    margin-left: 8px; letter-spacing: 0;
+    box-shadow: 0 0 8px rgba(200,66,58,.6);
+  }
+  .chat-badge.show { display: inline-block; }
+  .chat-toggle { margin-left: auto; font-size: 11px; color: #9d8e7c; letter-spacing: 1px; font-weight: 400; }
+  .chat-body { display: none; }
+  .chat-panel.expanded .chat-body { display: block; }
+  .chat-messages {
+    height: 128px; overflow-y: auto;
+    background: rgba(0,0,0,.22);
+    border-radius: 6px; padding: 8px; margin-bottom: 8px;
+    font-size: 12.5px; line-height: 1.55;
+    border: 1px solid rgba(200,162,74,.12);
+  }
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: rgba(200,162,74,.35); border-radius: 2px; }
+  .chat-msg { margin-bottom: 6px; word-break: break-word; }
+  .chat-msg:last-child { margin-bottom: 0; }
+  .chat-msg.self { text-align: right; }
+  .chat-msg .who { font-size: 10px; color: #9d8e7c; margin-bottom: 1px; letter-spacing: 1px; }
+  .chat-msg .bubble {
+    display: inline-block; padding: 4px 9px;
+    border-radius: 8px;
+    background: rgba(255,255,255,.08);
+    color: #d8cdbb; max-width: 88%; text-align: left;
+  }
+  .chat-msg.self .bubble { background: rgba(200,162,74,.28); color: #f0dfb8; }
+  .chat-msg.sys { text-align: center; }
+  .chat-msg.sys .bubble {
+    background: transparent; color: #8d7f6d;
+    font-size: 11px; padding: 0; letter-spacing: 1px;
+  }
+  .chat-input-row { display: flex; gap: 6px; }
+  .chat-input {
+    flex: 1; padding: 8px 10px; border-radius: 6px;
+    border: 1px solid rgba(200,162,74,.3);
+    background: rgba(255,255,255,.05); color: #e8dcc8;
+    font-family: inherit; font-size: 13px;
+  }
+  .chat-input:focus { outline: none; border-color: #c8a24a; }
+  .chat-input::placeholder { color: #7d7264; letter-spacing: 1px; }
+  .chat-send {
+    font-family: inherit; font-size: 13px; letter-spacing: 1px;
+    padding: 0 14px;
+    background: linear-gradient(180deg, #c8a24a, #a3803a);
+    color: #241c12; font-weight: 700;
+    border: none; border-radius: 6px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* 移动端专用组件，桌面默认隐藏 */
+  .mobile-status-bar,
+  .mobile-rule-bar,
+  .mobile-toolbar,
+  .mobile-sheet { display: none; }
+
+  /* ============ 移动端（≤920px） ============ */
+  @media (max-width: 920px) {
+    body {
+      display: block;
+      padding: 0;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+    #gameScreen {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .wrap {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 0;
+      width: 100%;
+      max-width: 100%;
+      min-height: 0;
+    }
+
+    /* 顶部状态条 */
+    .mobile-status-bar {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      height: 34px;
+      padding: 0 14px;
+      background: rgba(20,16,13,.6);
+      border-bottom: 1px solid rgba(200,162,74,.15);
+      gap: 8px;
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+    .mobile-status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #e8705f; flex-shrink: 0;
+      box-shadow: 0 0 6px currentColor;
+    }
+    .mobile-status-bar.black .mobile-status-dot { background: #a9b8c9; }
+    .mobile-status-bar.over  .mobile-status-dot { background: #d8b56a; }
+    .mobile-status-main { font-weight: 700; color: #e8705f; }
+    .mobile-status-bar.black .mobile-status-main { color: #a9b8c9; }
+    .mobile-status-bar.over  .mobile-status-main { color: #d8b56a; }
+    .mobile-status-sub {
+      color: #9d8e7c; font-size: 11.5px; margin-left: auto;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      max-width: 55%;
+    }
+
+    /* 棋盘：宽度占满屏幕，同时受高度约束 */
+    .board-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      min-height: 0;
+      width: 100%;
+      overflow: hidden;
+    }
+    .title { display: none; }
+    #board {
+      width: min(100vw, calc((100dvh - 130px) / 1.1095));
+      height: auto;
+      max-height: 100%;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    /* 规则条 */
+    .mobile-rule-bar {
+      display: block;
+      flex-shrink: 0;
+      height: 28px;
+      line-height: 28px;
+      padding: 0 14px;
+      background: rgba(20,16,13,.4);
+      font-size: 11.5px;
+      color: #9d8e7c;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      border-top: 1px solid rgba(200,162,74,.1);
+    }
+    .mobile-rule-bar.active { color: #d8cdbb; }
+
+    /* 隐藏桌面侧栏 */
+    .side { display: none; }
+
+    /* 底部工具栏 */
+    .mobile-toolbar {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      flex-shrink: 0;
+      gap: 1px;
+      padding: 6px 4px;
+      background: linear-gradient(180deg, rgba(30,23,18,.95), rgba(20,16,13,.98));
+      border-top: 1px solid rgba(200,162,74,.2);
+    }
+    .mobile-toolbar button {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 6px 0;
+      background: transparent;
+      border: none;
+      color: #cdbfa8;
+      font-family: inherit;
+      font-size: 10.5px;
+      letter-spacing: .5px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all .15s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .mobile-toolbar button:active { background: rgba(200,162,74,.15); }
+    .mobile-toolbar button.on { color: #a8e0b6; }
+    .mobile-toolbar .icon { font-size: 16px; line-height: 1; color: #c8a24a; }
+    .mobile-toolbar button.on .icon { color: #a8e0b6; }
+    .mobile-toolbar .label { font-size: 10px; color: inherit; }
+    .mobile-toolbar .badge {
+      position: absolute;
+      top: 2px;
+      right: calc(50% - 18px);
+      min-width: 14px; height: 14px; line-height: 14px;
+      padding: 0 4px;
+      background: #c8423a; color: #fff;
+      font-size: 9px; font-weight: 700;
+      border-radius: 7px;
+      text-align: center;
+      box-shadow: 0 0 6px rgba(200,66,58,.6);
+      display: none;
+    }
+    .mobile-toolbar .badge.show { display: block; }
+
+    /* 抽屉 */
+    .mobile-sheet {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+    }
+    .mobile-sheet.hidden { display: none; }
+    .sheet-mask {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,.55);
+      animation: fadeIn .2s;
+    }
+    .sheet-panel {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      max-height: 78vh;
+      background: linear-gradient(180deg, #2a221c 0%, #1c1714 100%);
+      border-top-left-radius: 14px;
+      border-top-right-radius: 14px;
+      border-top: 1px solid rgba(200,162,74,.35);
+      display: flex;
+      flex-direction: column;
+      animation: slideUp .25s;
+      padding-bottom: env(safe-area-inset-bottom);
+      box-shadow: 0 -10px 30px rgba(0,0,0,.6);
+    }
+    .sheet-handle {
+      width: 36px; height: 4px;
+      background: rgba(200,162,74,.3);
+      border-radius: 2px;
+      margin: 8px auto 4px;
+      flex-shrink: 0;
+    }
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px 10px;
+      border-bottom: 1px solid rgba(200,162,74,.12);
+      flex-shrink: 0;
+    }
+    .sheet-header .sheet-title {
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: #c8a24a;
+      font-weight: 700;
+    }
+    .sheet-close {
+      background: transparent;
+      border: none;
+      color: #9d8e7c;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 4px;
+      font-family: inherit;
+    }
+    .sheet-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      min-height: 0;
+    }
+    .sheet-body::-webkit-scrollbar { width: 4px; }
+    .sheet-body::-webkit-scrollbar-thumb { background: rgba(200,162,74,.35); border-radius: 2px; }
+
+    .sheet-chat {
+      display: flex;
+      flex-direction: column;
+      height: 46vh;
+      min-height: 260px;
+    }
+    .sheet-chat .chat-messages {
+      flex: 1;
+      height: auto;
+      margin-bottom: 10px;
+      min-height: 0;
+    }
+    .sheet-chat .chat-input-row { flex-shrink: 0; }
+
+    .sheet-more { display: flex; flex-direction: column; gap: 10px; }
+    .sheet-section {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(200,162,74,.15);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .sheet-section-title {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #c8a24a;
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+    .sheet-section-content {
+      font-size: 12.5px;
+      color: #b8a894;
+      line-height: 1.65;
+    }
+    .sheet-btn {
+      font-family: inherit;
+      font-size: 14px;
+      letter-spacing: 2px;
+      padding: 12px 0;
+      background: rgba(255,255,255,.04);
+      color: #cdbfa8;
+      border: 1px solid rgba(200,162,74,.3);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all .18s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sheet-btn:active { background: rgba(200,162,74,.18); }
+    .sheet-btn.danger {
+      border-color: rgba(220,80,70,.4);
+      color: #e08070;
+    }
+    .sheet-btn.danger:active { background: rgba(220,80,70,.15); }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    /* 开始页移动端适配 */
+    .home-title { font-size: 34px; letter-spacing: 12px; padding-left: 12px; }
+    .home-subtitle { margin-bottom: 32px; }
+  }
+
+  @media (max-width: 360px) {
+    .mobile-status-bar { height: 30px; font-size: 12px; padding: 0 10px; }
+    .mobile-rule-bar { height: 26px; line-height: 26px; font-size: 11px; }
+    .mobile-toolbar { padding: 4px 2px; }
+    .mobile-toolbar button { font-size: 10px; padding: 5px 0; }
+    .mobile-toolbar .icon { font-size: 14px; }
+    .mobile-toolbar .label { font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 开始页 ============ -->
+<div id="homeScreen" class="home-screen">
+  <div class="home-title">中國象棋</div>
+  <div class="home-subtitle">CHINESE CHESS</div>
+
+  <div id="homeMain" class="home-panel">
+    <button class="home-big-btn" id="btnLocalMode">单 机 对 战</button>
+    <button class="home-big-btn" id="btnOnlineMode">面 对 面 联 机</button>
+  </div>
+
+  <div id="homeDifficulty" class="home-panel hidden">
+    <div class="home-label">选择挑战难度</div>
+    <div class="home-diffs">
+      <button data-d="1">入门</button>
+      <button data-d="2" class="active">进阶</button>
+      <button data-d="3">高手</button>
+      <button data-d="4">大师</button>
+    </div>
+    <button class="home-big-btn primary" id="btnStartLocal" style="margin-top:8px;">开 始 对 战</button>
+    <button class="home-back" id="btnBackFromDiff">返回</button>
+  </div>
+
+  <div id="homeOnline" class="home-panel hidden">
+    <div id="onlineStatus" class="online-status">开启蓝牙网络共享（或同一 WiFi）后，一人创建房间，另一人加入。</div>
+
+    <div id="onlineActions" class="online-actions">
+      <button class="home-big-btn" id="createRoom">创 建 房 间（执红）</button>
+      <button class="home-big-btn" id="joinRoom">加 入 房 间（执黑）</button>
+    </div>
+
+    <div id="roomSetupBox" class="hidden">
+      <div class="home-label">设置房间码</div>
+      <input id="customRoomCode" class="online-input" placeholder="4-12位字母或数字，留空随机" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="12">
+      <button class="home-big-btn primary" id="confirmCreateRoom" style="margin-top:10px;">开 始 创 建</button>
+      <button class="home-back" id="cancelCreateRoom">取消</button>
+    </div>
+
+    <div id="roomIdBox" class="hidden">
+      <div class="home-label">把房间码告诉对方</div>
+      <div id="roomIdText" class="room-code"></div>
+    </div>
+
+    <div id="joinInputBox" class="hidden">
+      <div class="home-label">输入对方的房间码</div>
+      <input id="joinPeerId" class="online-input" placeholder="输入对方房间码" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="12">
+      <button class="home-big-btn primary" id="confirmJoin" style="margin-top:10px;">连 接</button>
+      <button class="home-back" id="cancelJoin">取消</button>
+    </div>
+
+    <button class="home-back" id="btnBackFromOnline">返回</button>
+  </div>
+</div>
+
+<!-- ============ 下棋界面 ============ -->
+<div id="gameScreen" class="hidden">
+  <div class="wrap">
+    <!-- 移动端状态条 -->
+    <div class="mobile-status-bar" id="mobileStatusBar">
+      <span class="mobile-status-dot"></span>
+      <span class="mobile-status-main" id="mobileStatusMain">红方走棋</span>
+      <span class="mobile-status-sub" id="mobileStatusSub">你执红先行</span>
+    </div>
+
+    <!-- 棋盘 -->
+    <div class="board-area">
+      <div class="title">中國象棋</div>
+      <canvas id="board"></canvas>
+    </div>
+
+    <!-- 移动端规则条 -->
+    <div class="mobile-rule-bar" id="mobileRuleBar">点击棋子查看规则</div>
+
+    <!-- 桌面端侧栏 -->
+    <aside class="side">
+      <div class="panel status-panel">
+        <div class="panel-title">对 局 状 态</div>
+        <div id="status" class="status s-red">红方走棋</div>
+        <div id="tip" class="tip">你执红先行，点击棋子即可走棋。</div>
+      </div>
+
+      <div class="panel ctrl-panel">
+        <div class="panel-title">操 作</div>
+        <div class="btns">
+          <button id="undo">悔棋</button>
+          <button id="restart">重开</button>
+          <button id="hintToggle" class="on">提示：开</button>
+          <button id="soundToggle" class="on">音效：开</button>
+          <button id="backToHome" class="wide">返回主菜单</button>
+        </div>
+      </div>
+
+      <div class="panel chat-panel" id="chatPanel">
+        <div class="chat-header" id="chatHeader">
+          <span>对 战 消 息</span>
+          <span class="chat-badge" id="chatBadge">0</span>
+          <span class="chat-toggle" id="chatToggle">展开 ▾</span>
+        </div>
+        <div class="chat-body" id="chatBody">
+          <div class="chat-messages" id="chatMessages"></div>
+          <div class="chat-input-row">
+            <input id="chatInput" class="chat-input" placeholder="输入消息…" maxlength="80" autocorrect="off" autocomplete="off">
+            <button id="chatSend" class="chat-send">发送</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel rule-panel">
+        <div class="panel-title">规 则 提 示</div>
+        <div id="ruleText" class="rule">点击己方棋子，会显示该棋子的走子规则与全部合法落点。</div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- 移动端底部工具栏 -->
+  <div class="mobile-toolbar">
+    <button data-action="undo">
+      <span class="icon">↩</span><span class="label">悔棋</span>
+    </button>
+    <button data-action="restart">
+      <span class="icon">↺</span><span class="label">重开</span>
+    </button>
+    <button data-action="hint" id="mobileHintBtn" class="on">
+      <span class="icon">◐</span><span class="label">提示</span>
+    </button>
+    <button data-action="sound" id="mobileSoundBtn" class="on">
+      <span class="icon">♪</span><span class="label">音效</span>
+    </button>
+    <button data-action="chat">
+      <span class="icon">✉</span><span class="label">消息</span>
+      <span class="badge" id="mobileChatBadge"></span>
+    </button>
+    <button data-action="more">
+      <span class="icon">⋯</span><span class="label">更多</span>
+    </button>
+  </div>
+
+  <!-- 移动端抽屉 -->
+  <div class="mobile-sheet hidden" id="mobileSheet">
+    <div class="sheet-mask" data-close="1"></div>
+    <div class="sheet-panel">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <span class="sheet-title" id="sheetTitle">消息</span>
+        <button class="sheet-close" data-close="1">×</button>
+      </div>
+      <div class="sheet-body" id="sheetBody"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+<script>
+/* =========================================================
+   一、常量
+   ========================================================= */
+const CELL = 60, PAD = 34;
+const W = PAD * 2 + CELL * 8;
+const H = PAD * 2 + CELL * 9;
+const px = c => PAD + c * CELL;
+const py = r => PAD + r * CELL;
+const idx = (r, c) => r * 9 + c;
+const DIRS4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+const NAMES = {
+  K:'帅', A:'仕', B:'相', N:'马', R:'车', C:'炮', P:'兵',
+  k:'将', a:'士', b:'象', n:'马', r:'车', c:'炮', p:'卒'
+};
+const RULE_TEXT = {
+  K:'帅／将：只能在九宫之内沿直线走一步；将帅不可照面。',
+  A:'仕／士：只能在九宫之内斜走一步。',
+  B:'相／象：走“田”字，田字中心有子则不能走（塞象眼），且不可过河。',
+  N:'马：走“日”字，若紧邻的马腿位置有子则不能走（蹩马腿）。',
+  R:'车：沿横线或竖线任意距离行走，途中不可有子阻挡。',
+  C:'炮：不吃子时走法同车；吃子时必须隔且仅隔一个棋子（炮架）。',
+  P:'兵／卒：未过河只能向前一步；过河后可以向前或左右移动，永不后退。'
+};
+const VALUE = { K: 10000, R: 900, C: 450, N: 400, B: 200, A: 200, P: 100 };
+const DIFFICULTY = {
+  1: { name: '入门', depth: 1, noise: 160 },
+  2: { name: '进阶', depth: 2, noise: 55 },
+  3: { name: '高手', depth: 3, noise: 14 },
+  4: { name: '大师', depth: 4, noise: 0 }
+};
+const INIT_ROWS = [
+  'rnbakabnr','.........','.c.....c.','p.p.p.p.p','.........',
+  '.........','P.P.P.P.P','.C.....C.','.........','RNBAKABNR'
+];
+function isRed(p) { return p >= 'A' && p <= 'Z'; }
+
+let viewFlipped = false;
+const srOf = r => viewFlipped ? 9 - r : r;
+const scOf = c => viewFlipped ? 8 - c : c;
+
+/* =========================================================
+   二、音效
+   ========================================================= */
+let audioCtx = null, masterGain = null, soundOn = true;
+function ac() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try { audioCtx = new AC(); } catch (e) { return null; }
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function getMaster() {
+  const ctx = ac();
+  if (!ctx) return null;
+  if (!masterGain) {
+    masterGain = ctx.createGain();
+    masterGain.gain.value = 0.9;
+    masterGain.connect(ctx.destination);
+  }
+  return masterGain;
+}
+function woodHit(baseFreq, dur, vol) {
+  if (!soundOn) return;
+  const ctx = ac(), master = getMaster();
+  if (!ctx || !master) return;
+  const t = ctx.currentTime;
+  const jitter = 0.95 + Math.random() * 0.1;
+  [[1,1.0],[1.83,0.32],[2.61,0.13]].forEach(([mult, amp]) => {
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = 'sine';
+    const f = baseFreq * mult * jitter;
+    osc.frequency.setValueAtTime(f, t);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(40, f * 0.72), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol * amp, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g); g.connect(master);
+    osc.start(t); osc.stop(t + dur + 0.02);
+  });
+  const len = Math.max(1, Math.floor(ctx.sampleRate * 0.035));
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/len, 3);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = Math.min(6000, baseFreq * 3.2);
+  bp.Q.value = 0.9;
+  const ng = ctx.createGain();
+  ng.gain.value = vol * 0.45;
+  src.connect(bp); bp.connect(ng); ng.connect(master);
+  src.start(t);
+}
+function playMelody(freqs, noteDur, vol, type) {
+  const ctx = ac(), master = getMaster();
+  if (!ctx || !master) return;
+  const t0 = ctx.currentTime + 0.04;
+  freqs.forEach((f, i) => {
+    const t = t0 + i * noteDur;
+    const isLast = i === freqs.length - 1;
+    const d = isLast ? noteDur * 2.2 : noteDur;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    osc.connect(g); g.connect(master);
+    osc.start(t); osc.stop(t + d + 0.03);
+    const osc2 = ctx.createOscillator(), g2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(f * 2, t);
+    g2.gain.setValueAtTime(0.0001, t);
+    g2.gain.exponentialRampToValueAtTime(vol * 0.28, t + 0.015);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t + d * 0.7);
+    osc2.connect(g2); g2.connect(master);
+    osc2.start(t); osc2.stop(t + d * 0.75);
+  });
+}
+function playClick() { if (soundOn) woodHit(700, 0.05, 0.1); }
+function playSelect() { if (soundOn) woodHit(640, 0.06, 0.13); }
+function playMove(isCapture) {
+  if (!soundOn) return;
+  if (isCapture) {
+    woodHit(230, 0.16, 0.42);
+    const ctx = ac(), master = getMaster();
+    if (!ctx || !master) return;
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(140, t);
+    osc.frequency.exponentialRampToValueAtTime(58, t + 0.2);
+    g.gain.setValueAtTime(0.3, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+    osc.connect(g); g.connect(master);
+    osc.start(t); osc.stop(t + 0.24);
+  } else {
+    woodHit(420, 0.1, 0.3);
+  }
+}
+function playCheck() {
+  if (!soundOn) return;
+  const ctx = ac(), master = getMaster();
+  if (!ctx || !master) return;
+  const t0 = ctx.currentTime + 0.02;
+  [[880,0],[1174.66,0.14]].forEach(([f, d]) => {
+    const t = t0 + d;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.17, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+    osc.connect(g); g.connect(master);
+    osc.start(t); osc.stop(t + 0.45);
+  });
+}
+function playWin() { if (soundOn) playMelody([523.25,659.25,783.99,1046.5],0.15,0.15,'sine'); }
+function playLose() { if (soundOn) playMelody([440,349.23,293.66,196],0.2,0.13,'triangle'); }
+function playChatNotify() {
+  if (!soundOn) return;
+  const ctx = ac(), master = getMaster();
+  if (!ctx || !master) return;
+  const t = ctx.currentTime;
+  [[1320, 0], [1760, 0.08]].forEach(([f, d]) => {
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(f, t + d);
+    g.gain.setValueAtTime(0.0001, t + d);
+    g.gain.exponentialRampToValueAtTime(0.09, t + d + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.16);
+    osc.connect(g); g.connect(master);
+    osc.start(t + d); osc.stop(t + d + 0.18);
+  });
+}
+
+/* =========================================================
+   三、棋局状态
+   ========================================================= */
+let board = [], turn = 'r', selected = -1, legalTargets = [];
+let lastMove = null, history = [], gameOver = false, thinking = false;
+let difficulty = 2, hintOn = true, resultMsg = '', aiToken = 0;
+
+let onlineMode = false, myColor = 'r', onlineMyTurn = true;
+let isHost = false, peer = null, conn = null;
+
+function initBoard() {
+  board = [];
+  for (const row of INIT_ROWS) for (const ch of row) board.push(ch);
+}
+function makeMove(bd, from, to) {
+  const nb = bd.slice();
+  nb[to] = nb[from];
+  nb[from] = '.';
+  return nb;
+}
+
+/* =========================================================
+   四、走法生成
+   ========================================================= */
+function genMovesFor(bd, i) {
+  const p = bd[i];
+  if (p === '.') return [];
+  const red = isRed(p);
+  const t = p.toUpperCase();
+  const r = (i / 9) | 0, c = i % 9;
+  const out = [];
+  const get = (rr, cc) =>
+    (rr < 0 || rr > 9 || cc < 0 || cc > 8) ? '#' : bd[rr * 9 + cc];
+  const push = (rr, cc) => {
+    const q = get(rr, cc);
+    if (q === '#') return false;
+    if (q === '.') { out.push(idx(rr, cc)); return true; }
+    if (isRed(q) !== red) out.push(idx(rr, cc));
+    return false;
+  };
+
+  if (t === 'R' || t === 'C') {
+    for (const [dr, dc] of DIRS4) {
+      let rr = r + dr, cc = c + dc;
+      if (t === 'R') {
+        while (push(rr, cc)) { rr += dr; cc += dc; }
+      } else {
+        let screen = false;
+        while (true) {
+          const q = get(rr, cc);
+          if (q === '#') break;
+          if (!screen) {
+            if (q === '.') out.push(idx(rr, cc));
+            else screen = true;
+          } else {
+            if (q !== '.') {
+              if (isRed(q) !== red) out.push(idx(rr, cc));
+              break;
+            }
+          }
+          rr += dr; cc += dc;
+        }
+      }
+    }
+  } else if (t === 'N') {
+    const HM = [
+      [-2,-1,-1,0],[-2,1,-1,0],[2,-1,1,0],[2,1,1,0],
+      [-1,-2,0,-1],[1,-2,0,-1],[-1,2,0,1],[1,2,0,1]
+    ];
+    for (const [dr,dc,br,bc] of HM) {
+      if (get(r+br,c+bc) === '.') push(r+dr,c+dc);
+    }
+  } else if (t === 'B') {
+    for (const [dr,dc] of [[-2,-2],[-2,2],[2,-2],[2,2]]) {
+      const rr = r+dr, cc = c+dc;
+      if (rr<0||rr>9||cc<0||cc>8) continue;
+      if (red && rr<5) continue;
+      if (!red && rr>4) continue;
+      if (get(r+dr/2,c+dc/2) !== '.') continue;
+      push(rr,cc);
+    }
+  } else if (t === 'A') {
+    for (const [dr,dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) {
+      const rr = r+dr, cc = c+dc;
+      if (cc<3||cc>5) continue;
+      if (red ? (rr<7||rr>9) : (rr<0||rr>2)) continue;
+      push(rr,cc);
+    }
+  } else if (t === 'K') {
+    for (const [dr,dc] of DIRS4) {
+      const rr = r+dr, cc = c+dc;
+      if (cc<3||cc>5) continue;
+      if (red ? (rr<7||rr>9) : (rr<0||rr>2)) continue;
+      push(rr,cc);
+    }
+  } else if (t === 'P') {
+    const dr = red ? -1 : 1;
+    push(r+dr, c);
+    const crossed = red ? r <= 4 : r >= 5;
+    if (crossed) { push(r, c-1); push(r, c+1); }
+  }
+  return out;
+}
+
+/* =========================================================
+   五、将军 / 将帅照面
+   ========================================================= */
+function kingPos(bd, red) {
+  const k = red ? 'K' : 'k';
+  for (let i = 0; i < 90; i++) if (bd[i] === k) return i;
+  return -1;
+}
+function isKingsFacing(bd) {
+  const redK = kingPos(bd, true);
+  const blackK = kingPos(bd, false);
+  if (redK < 0 || blackK < 0) return false;
+  const r1 = (redK / 9) | 0, c1 = redK % 9;
+  const r2 = (blackK / 9) | 0, c2 = blackK % 9;
+  if (c1 !== c2) return false;
+  const minR = Math.min(r1, r2), maxR = Math.max(r1, r2);
+  for (let r = minR + 1; r < maxR; r++) {
+    if (bd[r * 9 + c1] !== '.') return false;
+  }
+  return true;
+}
+function isChecked(bd, red) {
+  const kp = kingPos(bd, red);
+  if (kp < 0) return true;
+  const r = (kp / 9) | 0, c = kp % 9;
+  const enemyRed = !red;
+  const isEnemy = q => q !== '.' && isRed(q) === enemyRed;
+  const at = (rr, cc) =>
+    (rr<0||rr>9||cc<0||cc>8) ? '.' : bd[rr*9+cc];
+
+  for (const [dr, dc] of DIRS4) {
+    let rr = r + dr, cc = c + dc, screen = false;
+    while (rr>=0 && rr<=9 && cc>=0 && cc<=8) {
+      const q = bd[rr*9+cc];
+      if (q !== '.') {
+        if (!screen) {
+          if (isEnemy(q) && 'RrKk'.includes(q)) return true;
+          screen = true;
+        } else {
+          if (isEnemy(q) && 'Cc'.includes(q)) return true;
+          break;
+        }
+      }
+      rr += dr; cc += dc;
+    }
+  }
+  for (const [dr,dc] of [[-2,-1],[-2,1],[2,-1],[2,1],[-1,-2],[1,-2],[-1,2],[1,2]]) {
+    const mr = r+dr, mc = c+dc;
+    const q = at(mr, mc);
+    if (isEnemy(q) && 'Nn'.includes(q)) {
+      let lr, lc;
+      if (Math.abs(dr) === 2) { lr = mr - dr/2; lc = mc; }
+      else { lr = mr; lc = mc - dc/2; }
+      if (at(lr, lc) === '.') return true;
+    }
+  }
+  if (red) {
+    if (at(r-1, c) === 'p') return true;
+    if (at(r, c-1) === 'p' || at(r, c+1) === 'p') return true;
+  } else {
+    if (at(r+1, c) === 'P') return true;
+    if (at(r, c-1) === 'P' || at(r, c+1) === 'P') return true;
+  }
+  return false;
+}
+function allLegalMoves(bd, red) {
+  const res = [];
+  for (let i = 0; i < 90; i++) {
+    const p = bd[i];
+    if (p === '.' || isRed(p) !== red) continue;
+    for (const t of genMovesFor(bd, i)) {
+      if (!isChecked(makeMove(bd, i, t), red)) res.push({ from: i, to: t });
+    }
+  }
+  return res;
+}
+
+/* =========================================================
+   六、AI 搜索
+   ========================================================= */
+function positional(t, i, red) {
+  const r = (i/9)|0, c = i%9;
+  const prog = red ? (9-r) : r;
+  const mid = 4 - Math.abs(c-4);
+  switch (t) {
+    case 'P': { let v = prog*12; if (prog>=5) v += 60 + mid*10; return v; }
+    case 'N': return mid*6 + (prog>=3?20:0);
+    case 'C': return mid*5 + (prog>=4?10:0);
+    case 'R': return mid*4 + (prog>=3?15:0);
+    default: return 0;
+  }
+}
+function evalFor(bd, red) {
+  let s = 0;
+  for (let i = 0; i < 90; i++) {
+    const p = bd[i];
+    if (p === '.') continue;
+    const isR = isRed(p);
+    const t = p.toUpperCase();
+    const v = VALUE[t] + positional(t, i, isR);
+    s += isR ? v : -v;
+  }
+  return red ? s : -s;
+}
+const MATE = 500000;
+function search(bd, depth, alpha, beta, red) {
+  if (depth <= 0) return evalFor(bd, red);
+  const moves = [];
+  for (let i = 0; i < 90; i++) {
+    const p = bd[i];
+    if (p === '.' || isRed(p) !== red) continue;
+    for (const t of genMovesFor(bd, i)) {
+      moves.push({ from: i, to: t, cap: bd[t]==='.'?0:VALUE[bd[t].toUpperCase()] });
+    }
+  }
+  moves.sort((a,b) => b.cap - a.cap);
+  let anyLegal = false, best = -Infinity;
+  for (const m of moves) {
+    const nb = makeMove(bd, m.from, m.to);
+    if (isChecked(nb, red)) continue;
+    anyLegal = true;
+    const v = -search(nb, depth-1, -beta, -alpha, !red);
+    if (v > best) best = v;
+    if (best > alpha) alpha = best;
+    if (alpha >= beta) break;
+  }
+  if (!anyLegal) return -MATE + depth;
+  return best;
+}
+function findBestMove() {
+  const cfg = DIFFICULTY[difficulty];
+  const moves = [];
+  for (let i = 0; i < 90; i++) {
+    const p = board[i];
+    if (p === '.' || isRed(p)) continue;
+    for (const t of genMovesFor(board, i)) {
+      if (!isChecked(makeMove(board, i, t), false)) {
+        moves.push({ from: i, to: t, cap: board[t]==='.'?0:VALUE[board[t].toUpperCase()] });
+      }
+    }
+  }
+  if (!moves.length) return null;
+  moves.sort((a,b) => b.cap - a.cap);
+  const scored = [];
+  let alpha = -Infinity;
+  for (const m of moves) {
+    const nb = makeMove(board, m.from, m.to);
+    let v = -search(nb, cfg.depth-1, -Infinity, -alpha, true);
+    v += (Math.random() - 0.5) * cfg.noise;
+    scored.push({ m, v });
+    if (v > alpha) alpha = v;
+  }
+  scored.sort((a,b) => b.v - a.v);
+  return scored[0].m;
+}
+
+/* =========================================================
+   七、绘制
+   ========================================================= */
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+canvas.width = W * DPR;
+canvas.height = H * DPR;
+
+function drawPiece(x, y, p) {
+  const red = isRed(p);
+  const rad = CELL * 0.44;
+  ctx.beginPath();
+  ctx.arc(x+1.5, y+2.5, rad, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(60,40,20,0.28)';
+  ctx.fill();
+  const g = ctx.createRadialGradient(x-rad*0.35,y-rad*0.35,rad*0.15,x,y,rad);
+  g.addColorStop(0,'#fffdf6'); g.addColorStop(0.62,'#f7ecd4'); g.addColorStop(1,'#e0c99f');
+  ctx.beginPath(); ctx.arc(x,y,rad,0,Math.PI*2);
+  ctx.fillStyle = g; ctx.fill();
+  const col = red ? '#b3202a' : '#2b2b2b';
+  ctx.lineWidth = 1.7; ctx.strokeStyle = col; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x,y,rad*0.82,0,Math.PI*2);
+  ctx.lineWidth = 0.9;
+  ctx.strokeStyle = red ? 'rgba(179,32,42,0.45)' : 'rgba(43,43,43,0.45)';
+  ctx.stroke();
+  ctx.fillStyle = col;
+  ctx.font = `bold ${Math.round(CELL*0.52)}px "KaiTi","STKaiti","Kaiti SC","SimSun",serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(NAMES[p], x, y+1.5);
+}
+
+function draw() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0,'#f7e7c6'); bg.addColorStop(0.45,'#f0dcb2'); bg.addColorStop(1,'#e3cba0');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  ctx.save(); ctx.globalAlpha = 0.055; ctx.strokeStyle = '#6b4a2a'; ctx.lineWidth = 1;
+  for (let i = 0; i < 30; i++) {
+    const y = i*(H/30)+4;
+    ctx.beginPath(); ctx.moveTo(0,y);
+    ctx.bezierCurveTo(W*0.3,y+9,W*0.7,y-9,W,y+5);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  const LINE = '#6b4a2a'; ctx.strokeStyle = LINE;
+  ctx.lineWidth = 2.4;
+  ctx.strokeRect(px(0)-15, py(0)-15, CELL*8+30, CELL*9+30);
+  ctx.lineWidth = 1;
+  ctx.strokeRect(px(0)-8, py(0)-8, CELL*8+16, CELL*9+16);
+  ctx.lineWidth = 1.1; ctx.beginPath();
+  for (let r = 0; r < 10; r++) { ctx.moveTo(px(0),py(r)); ctx.lineTo(px(8),py(r)); }
+  for (let c = 0; c < 9; c++) {
+    if (c===0||c===8) { ctx.moveTo(px(c),py(0)); ctx.lineTo(px(c),py(9)); }
+    else {
+      ctx.moveTo(px(c),py(0)); ctx.lineTo(px(c),py(4));
+      ctx.moveTo(px(c),py(5)); ctx.lineTo(px(c),py(9));
+    }
+  }
+  ctx.moveTo(px(3),py(0)); ctx.lineTo(px(5),py(2));
+  ctx.moveTo(px(5),py(0)); ctx.lineTo(px(3),py(2));
+  ctx.moveTo(px(3),py(7)); ctx.lineTo(px(5),py(9));
+  ctx.moveTo(px(5),py(7)); ctx.lineTo(px(3),py(9));
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(107,74,42,0.72)';
+  ctx.font = '22px "KaiTi","STKaiti","Kaiti SC",serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const midY = (py(4)+py(5))/2;
+  ctx.fillText(viewFlipped?'汉  界':'楚  河', px(2), midY);
+  ctx.fillText(viewFlipped?'楚  河':'汉  界', px(6), midY);
+
+  if (lastMove) {
+    ctx.strokeStyle = 'rgba(200,162,74,0.9)'; ctx.lineWidth = 2.5;
+    for (const i of [lastMove.from, lastMove.to]) {
+      const r = (i/9)|0, c = i%9;
+      ctx.beginPath();
+      ctx.arc(px(scOf(c)), py(srOf(r)), CELL*0.465, 0, Math.PI*2);
+      ctx.stroke();
+    }
+  }
+
+  for (const red of [true, false]) {
+    if (isChecked(board, red)) {
+      const kp = kingPos(board, red);
+      if (kp >= 0) {
+        const r = (kp/9)|0, c = kp%9;
+        const sr = srOf(r), sc = scOf(c);
+        const rg = ctx.createRadialGradient(px(sc),py(sr),CELL*0.18,px(sc),py(sr),CELL*0.66);
+        rg.addColorStop(0,'rgba(220,45,45,0.55)');
+        rg.addColorStop(1,'rgba(220,45,45,0)');
+        ctx.beginPath();
+        ctx.arc(px(sc), py(sr), CELL*0.66, 0, Math.PI*2);
+        ctx.fillStyle = rg; ctx.fill();
+      }
+    }
+  }
+
+  for (let i = 0; i < 90; i++) {
+    const p = board[i];
+    if (p === '.') continue;
+    const r = (i/9)|0, c = i%9;
+    drawPiece(px(scOf(c)), py(srOf(r)), p);
+  }
+
+  if (hintOn && selected >= 0) {
+    const r = (selected/9)|0, c = selected%9;
+    ctx.beginPath();
+    ctx.arc(px(scOf(c)), py(srOf(r)), CELL*0.465, 0, Math.PI*2);
+    ctx.lineWidth = 3.2;
+    ctx.strokeStyle = 'rgba(46,139,87,0.92)';
+    ctx.stroke();
+  }
+
+  if (hintOn && legalTargets.length) {
+    for (const t of legalTargets) {
+      const r = (t/9)|0, c = t%9;
+      const sr = srOf(r), sc = scOf(c);
+      if (board[t] !== '.') {
+        ctx.beginPath();
+        ctx.arc(px(sc), py(sr), CELL*0.44, 0, Math.PI*2);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(200,60,50,0.85)';
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.arc(px(sc), py(sr), CELL*0.13, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(46,139,87,0.62)';
+        ctx.fill();
+      }
+    }
+  }
+}
+
+/* =========================================================
+   八、界面交互
+   ========================================================= */
+const statusEl = document.getElementById('status');
+const tipEl = document.getElementById('tip');
+const ruleEl = document.getElementById('ruleText');
+const mobileStatusBar = document.getElementById('mobileStatusBar');
+const mobileStatusMain = document.getElementById('mobileStatusMain');
+const mobileStatusSub = document.getElementById('mobileStatusSub');
+const mobileRuleBar = document.getElementById('mobileRuleBar');
+
+function setRule(t) {
+  ruleEl.textContent = t;
+  ruleEl.scrollTop = 0;
+  mobileRuleBar.textContent = t;
+  mobileRuleBar.classList.add('active');
+}
+function clearSelection() { selected = -1; legalTargets = []; }
+function showHome() {
+  document.getElementById('homeScreen').classList.remove('hidden');
+  document.getElementById('gameScreen').classList.add('hidden');
+  closeSheet();
+}
+function showGame() {
+  document.getElementById('homeScreen').classList.add('hidden');
+  document.getElementById('gameScreen').classList.remove('hidden');
+}
+
+function resetGame() {
+  aiToken++;
+  initBoard();
+  turn = 'r';
+  clearSelection();
+  lastMove = null;
+  history = [];
+  gameOver = false;
+  thinking = false;
+  resultMsg = '';
+  if (onlineMode) onlineMyTurn = (myColor === 'r');
+  setRule('点击己方棋子，会显示该棋子的走子规则与全部合法落点。');
+  updateUI();
+  draw();
+}
+
+function updateUI() {
+  let mainText = '', subText = '', cls = '';
+
+  if (gameOver) {
+    mainText = resultMsg;
+    subText = '点击「重开」再来一局。';
+    cls = 'over';
+  } else if (onlineMode) {
+    if (!conn || !conn.open) {
+      mainText = '未连接';
+      subText = '请先创建或加入房间。';
+      cls = 'black';
+    } else if (onlineMyTurn) {
+      mainText = '轮到你（' + (myColor === 'r' ? '红' : '黑') + '）';
+      subText = isChecked(board, myColor === 'r') ? '⚠ 将军！必须应将' : '点击棋子走棋';
+      cls = myColor === 'r' ? 'red' : 'black';
+    } else {
+      mainText = '等待对方…';
+      subText = '对方正在思考';
+      cls = 'black';
+    }
+  } else {
+    if (turn === 'r') {
+      mainText = '红方走棋';
+      subText = isChecked(board, true) ? '⚠ 你的帅被将军' : '你执红先行';
+      cls = 'red';
+    } else {
+      mainText = '黑方思考中…';
+      subText = '电脑正在计算';
+      cls = 'black';
+    }
+  }
+
+  statusEl.textContent = mainText;
+  statusEl.className = 'status s-' + cls;
+  tipEl.textContent = subText;
+
+  mobileStatusMain.textContent = mainText;
+  mobileStatusSub.textContent = subText;
+  mobileStatusBar.className = 'mobile-status-bar ' + cls;
+}
+
+function selectPiece(i) {
+  selected = i;
+  const myRed = onlineMode ? (myColor === 'r') : true;
+  const allMoves = genMovesFor(board, i);
+  legalTargets = allMoves.filter(t => !isChecked(makeMove(board, i, t), myRed));
+
+  const p = board[i];
+  let msg = RULE_TEXT[p.toUpperCase()];
+  if (legalTargets.length < allMoves.length) {
+    const filteredByFaceOff = allMoves.filter(t =>
+      !legalTargets.includes(t) && isKingsFacing(makeMove(board, i, t))
+    );
+    if (filteredByFaceOff.length > 0) {
+      msg += `（${filteredByFaceOff.length} 个走法会导致将帅照面，不可用）`;
+    }
+  }
+  if (legalTargets.length === 0) msg += '（当前无合法落点）';
+  setRule(msg);
+  playSelect();
+  draw();
+}
+
+function doMove(from, to) {
+  if (onlineMode) {
+    if (!conn || !conn.open) { setRule('尚未连接对手。'); return; }
+    if (!onlineMyTurn) { setRule('还没轮到你走棋。'); return; }
+
+    const isCapture = board[to] !== '.';
+    history.push({ board: board.slice(), lastMove });
+    board = makeMove(board, from, to);
+    lastMove = { from, to };
+    clearSelection();
+    playMove(isCapture);
+    draw();
+    sendMove(from, to);
+
+    const oppRed = !(myColor === 'r');
+    if (allLegalMoves(board, oppRed).length === 0) {
+      gameOver = true;
+      resultMsg = isChecked(board, oppRed) ? '绝杀！你赢了 🎉' : '对方无子可动，你赢了 🎉';
+      setTimeout(playWin, 240);
+      updateUI(); draw();
+      return;
+    }
+    if (isChecked(board, oppRed)) setTimeout(playCheck, 170);
+    onlineMyTurn = false;
+    updateUI();
+    return;
+  }
+
+  const isCapture = board[to] !== '.';
+  history.push({ board: board.slice(), lastMove });
+  board = makeMove(board, from, to);
+  lastMove = { from, to };
+  clearSelection();
+  playMove(isCapture);
+
+  if (allLegalMoves(board, false).length === 0) {
+    gameOver = true;
+    resultMsg = isChecked(board, false) ? '绝杀！红方获胜 🎉' : '黑方无子可动，红方获胜 🎉';
+    setTimeout(playWin, 240);
+    updateUI(); draw();
+    return;
+  }
+  if (isChecked(board, false)) setTimeout(playCheck, 170);
+
+  turn = 'b';
+  thinking = true;
+  updateUI();
+  draw();
+
+  const myToken = ++aiToken;
+  setTimeout(() => {
+    if (myToken !== aiToken) return;
+    if (gameOver) { thinking = false; return; }
+    const m = findBestMove();
+    thinking = false;
+    if (!m) {
+      gameOver = true;
+      resultMsg = isChecked(board, false) ? '绝杀！红方获胜 🎉' : '黑方无子可动，红方获胜 🎉';
+      setTimeout(playWin, 240);
+      updateUI(); draw();
+      return;
+    }
+    const aiCapture = board[m.to] !== '.';
+    board = makeMove(board, m.from, m.to);
+    lastMove = { from: m.from, to: m.to };
+    playMove(aiCapture);
+    if (allLegalMoves(board, true).length === 0) {
+      gameOver = true;
+      resultMsg = isChecked(board, true) ? '红方被将死，黑方获胜' : '红方无子可动，黑方获胜';
+      setTimeout(playLose, 240);
+      updateUI(); draw();
+      return;
+    }
+    turn = 'r';
+    if (isChecked(board, true)) {
+      setTimeout(playCheck, 170);
+      setRule('注意！你的帅正被将军，必须应将。');
+    }
+    updateUI();
+    draw();
+  }, 360);
+}
+
+function handleClick(i) {
+  if (gameOver || thinking) return;
+  if (onlineMode) {
+    if (!conn || !conn.open) { setRule('尚未连接对手。'); return; }
+    if (!onlineMyTurn) { setRule('还没轮到你走棋，请等待对方。'); return; }
+    if (selected >= 0 && legalTargets.includes(i)) { doMove(selected, i); return; }
+    const p = board[i];
+    const myRed = myColor === 'r';
+    if (p !== '.' && isRed(p) === myRed) { selectPiece(i); return; }
+    if (selected >= 0) { clearSelection(); draw(); return; }
+    return;
+  }
+  if (turn !== 'r') return;
+  if (selected >= 0 && legalTargets.includes(i)) { doMove(selected, i); return; }
+  const p = board[i];
+  if (p !== '.' && isRed(p)) { selectPiece(i); return; }
+  if (selected >= 0) { clearSelection(); draw(); return; }
+  if (p === '.') setRule('请点击红方棋子。红方棋子为：帅、仕、相、马、车、炮、兵。');
+  else setRule('这是黑方棋子，现在轮到你走红棋。');
+}
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (W / rect.width);
+  const y = (e.clientY - rect.top) * (H / rect.height);
+  const sc = Math.round((x - PAD) / CELL);
+  const sr = Math.round((y - PAD) / CELL);
+  if (sc < 0 || sc > 8 || sr < 0 || sr > 9) return;
+  const cx = px(sc), cy = py(sr);
+  if (Math.hypot(x - cx, y - cy) > CELL * 0.55) return;
+  const r = viewFlipped ? 9 - sr : sr;
+  const c = viewFlipped ? 8 - sc : sc;
+  handleClick(idx(r, c));
+});
+
+/* =========================================================
+   九、聊天
+   ========================================================= */
+let chatMessages = [];
+let chatUnread = 0;
+let chatPanelExpanded = false;
+
+const chatPanelEl = document.getElementById('chatPanel');
+const chatHeaderEl = document.getElementById('chatHeader');
+const chatToggleEl = document.getElementById('chatToggle');
+const chatBadgeEl = document.getElementById('chatBadge');
+const chatMessagesEl = document.getElementById('chatMessages');
+const chatInputEl = document.getElementById('chatInput');
+const mobileChatBadge = document.getElementById('mobileChatBadge');
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function renderChatTo(container) {
+  if (!container) return;
+  container.innerHTML = '';
+  chatMessages.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + (m.who === 'self' ? 'self' : m.who === 'sys' ? 'sys' : '');
+    if (m.who === 'sys') {
+      div.innerHTML = `<div class="bubble">${escapeHtml(m.text)}</div>`;
+    } else {
+      const label = m.who === 'self' ? '我' : '对方';
+      div.innerHTML = `<div class="who">${label}</div><div class="bubble">${escapeHtml(m.text)}</div>`;
+    }
+    container.appendChild(div);
+  });
+  container.scrollTop = container.scrollHeight;
+}
+
+function updateChatBadges() {
+  if (chatUnread > 0) {
+    chatBadgeEl.textContent = chatUnread > 9 ? '9+' : String(chatUnread);
+    chatBadgeEl.classList.add('show');
+    mobileChatBadge.textContent = chatUnread > 9 ? '9+' : String(chatUnread);
+    mobileChatBadge.classList.add('show');
+  } else {
+    chatBadgeEl.classList.remove('show');
+    mobileChatBadge.classList.remove('show');
+  }
+}
+
+function addChatMessage(text, who) {
+  chatMessages.push({ text, who });
+  renderChatTo(chatMessagesEl);
+  const mobileList = document.getElementById('mobileChatMessages');
+  if (mobileList) renderChatTo(mobileList);
+
+  const sheetOpen = !document.getElementById('mobileSheet').classList.contains('hidden')
+    && document.getElementById('sheetTitle').textContent === '对 战 消 息';
+  if (!chatPanelExpanded && !sheetOpen && who !== 'self') {
+    chatUnread++;
+    updateChatBadges();
+  }
+  if (who !== 'self') playChatNotify();
+}
+
+function setChatExpanded(expanded) {
+  chatPanelExpanded = expanded;
+  chatPanelEl.classList.toggle('expanded', expanded);
+  chatToggleEl.textContent = expanded ? '收起 ▴' : '展开 ▾';
+  if (expanded) {
+    chatUnread = 0;
+    updateChatBadges();
+    renderChatTo(chatMessagesEl);
+  }
+}
+
+chatHeaderEl.addEventListener('click', () => {
+  setChatExpanded(!chatPanelExpanded);
+  playClick();
+  if (chatPanelExpanded) setTimeout(() => chatInputEl.focus(), 60);
+});
+
+function sendChatText(text) {
+  text = String(text || '').trim();
+  if (!text) return;
+  if (!onlineMode || !conn || !conn.open) {
+    setRule('尚未连接对手，无法发送消息。');
+    return;
+  }
+  conn.send({ type: 'chat', text: text.slice(0, 80) });
+  addChatMessage(text.slice(0, 80), 'self');
+}
+
+document.getElementById('chatSend').addEventListener('click', () => {
+  sendChatText(chatInputEl.value);
+  chatInputEl.value = '';
+  chatInputEl.focus();
+});
+chatInputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.isComposing) {
+    e.preventDefault();
+    sendChatText(chatInputEl.value);
+    chatInputEl.value = '';
+  }
+});
+
+function receiveChat(text) {
+  addChatMessage(text, 'opp');
+}
+
+function clearChatMessages() {
+  chatMessages = [];
+  chatUnread = 0;
+  updateChatBadges();
+  renderChatTo(chatMessagesEl);
+  const ml = document.getElementById('mobileChatMessages');
+  if (ml) ml.innerHTML = '';
+  setChatExpanded(false);
+}
+
+function showChatPanel(show) {
+  chatPanelEl.classList.toggle('visible', !!show);
+}
+
+/* =========================================================
+   十、移动端抽屉
+   ========================================================= */
+const mobileSheet = document.getElementById('mobileSheet');
+const sheetTitle = document.getElementById('sheetTitle');
+const sheetBody = document.getElementById('sheetBody');
+
+function closeSheet() {
+  mobileSheet.classList.add('hidden');
+  sheetBody.innerHTML = '';
+}
+
+mobileSheet.addEventListener('click', e => {
+  if (e.target.dataset.close === '1') closeSheet();
+});
+
+function openChatSheet() {
+  sheetTitle.textContent = '对 战 消 息';
+  sheetBody.innerHTML =
+    '<div class="sheet-chat">' +
+      '<div class="chat-messages" id="mobileChatMessages"></div>' +
+      '<div class="chat-input-row">' +
+        '<input id="mobileChatInput" class="chat-input" placeholder="输入消息…" maxlength="80" autocorrect="off" autocomplete="off">' +
+        '<button id="mobileChatSend" class="chat-send">发送</button>' +
+      '</div>' +
+    '</div>';
+  mobileSheet.classList.remove('hidden');
+  renderChatTo(document.getElementById('mobileChatMessages'));
+  chatUnread = 0;
+  updateChatBadges();
+  playClick();
+
+  const input = document.getElementById('mobileChatInput');
+  const send = () => {
+    const t = input.value;
+    if (!t.trim()) return;
+    sendChatText(t);
+    input.value = '';
+    input.focus();
+  };
+  document.getElementById('mobileChatSend').addEventListener('click', send);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.isComposing) {
+      e.preventDefault();
+      send();
+    }
+  });
+  setTimeout(() => input.focus(), 200);
+}
+
+function openMoreSheet() {
+  sheetTitle.textContent = '更 多';
+  const ruleContent = mobileRuleBar.classList.contains('active')
+    ? mobileRuleBar.textContent
+    : '点击棋子后，这里会显示该棋子的走子规则。';
+  sheetBody.innerHTML =
+    '<div class="sheet-more">' +
+      '<div class="sheet-section">' +
+        '<div class="sheet-section-title">当前规则提示</div>' +
+        '<div class="sheet-section-content">' + escapeHtml(ruleContent) + '</div>' +
+      '</div>' +
+      '<button class="sheet-btn danger" data-action="backToHome">返 回 主 菜 单</button>' +
+    '</div>';
+  mobileSheet.classList.remove('hidden');
+  playClick();
+
+  sheetBody.querySelector('[data-action="backToHome"]').addEventListener('click', () => {
+    closeSheet();
+    handleAction('backToHome');
+  });
+}
+
+/* =========================================================
+   十一、按钮动作
+   ========================================================= */
+function handleAction(action) {
+  switch (action) {
+    case 'undo': {
+      if (onlineMode) { setRule('联机模式下暂不支持悔棋。'); return; }
+      if (thinking || history.length === 0) return;
+      playClick();
+      aiToken++;
+      const s = history.pop();
+      board = s.board;
+      lastMove = s.lastMove;
+      turn = 'r';
+      gameOver = false;
+      thinking = false;
+      resultMsg = '';
+      clearSelection();
+      setRule('已悔棋，请重新走子。');
+      updateUI(); draw();
+      break;
+    }
+    case 'restart':
+      playClick();
+      if (onlineMode && conn && conn.open) conn.send({ type: 'restart' });
+      resetGame();
+      break;
+    case 'hint':
+      hintOn = !hintOn;
+      playClick();
+      draw();
+      updateToggleButtons();
+      break;
+    case 'sound':
+      soundOn = !soundOn;
+      if (soundOn) playClick();
+      updateToggleButtons();
+      break;
+    case 'chat':
+      openChatSheet();
+      break;
+    case 'more':
+      openMoreSheet();
+      break;
+    case 'backToHome':
+      playClick();
+      if (onlineMode && conn && conn.open) {
+        if (!confirm('当前对局还在进行，返回主菜单会断开联机，确定吗？')) return;
+      }
+      disconnectAll();
+      onlineMode = false;
+      viewFlipped = false;
+      resetHomeOnlineUI();
+      showHome();
+      showHomeSub('main');
+      break;
+  }
+}
+
+function updateToggleButtons() {
+  const hintBtn = document.getElementById('hintToggle');
+  const soundBtn = document.getElementById('soundToggle');
+  hintBtn.textContent = '提示：' + (hintOn ? '开' : '关');
+  hintBtn.classList.toggle('on', hintOn);
+  soundBtn.textContent = '音效：' + (soundOn ? '开' : '关');
+  soundBtn.classList.toggle('on', soundOn);
+  document.getElementById('mobileHintBtn').classList.toggle('on', hintOn);
+  document.getElementById('mobileSoundBtn').classList.toggle('on', soundOn);
+}
+
+document.querySelectorAll('.mobile-toolbar [data-action]').forEach(btn => {
+  btn.addEventListener('click', () => handleAction(btn.dataset.action));
+});
+document.getElementById('undo').addEventListener('click', () => handleAction('undo'));
+document.getElementById('restart').addEventListener('click', () => handleAction('restart'));
+document.getElementById('hintToggle').addEventListener('click', () => handleAction('hint'));
+document.getElementById('soundToggle').addEventListener('click', () => handleAction('sound'));
+document.getElementById('backToHome').addEventListener('click', () => handleAction('backToHome'));
+
+/* =========================================================
+   十二、开始页导航
+   ========================================================= */
+function showHomeSub(sub) {
+  document.getElementById('homeMain').classList.toggle('hidden', sub !== 'main');
+  document.getElementById('homeDifficulty').classList.toggle('hidden', sub !== 'difficulty');
+  document.getElementById('homeOnline').classList.toggle('hidden', sub !== 'online');
+}
+document.getElementById('btnLocalMode').addEventListener('click', () => { playClick(); showHomeSub('difficulty'); });
+document.getElementById('btnOnlineMode').addEventListener('click', () => { playClick(); showHomeSub('online'); resetHomeOnlineUI(); });
+document.getElementById('btnBackFromDiff').addEventListener('click', () => { playClick(); showHomeSub('main'); });
+document.getElementById('btnBackFromOnline').addEventListener('click', () => {
+  playClick();
+  disconnectAll();
+  resetHomeOnlineUI();
+  showHomeSub('main');
+});
+document.querySelectorAll('#homeDifficulty .home-diffs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    difficulty = +btn.dataset.d;
+    document.querySelectorAll('#homeDifficulty .home-diffs button')
+      .forEach(b => b.classList.toggle('active', b === btn));
+    playClick();
+  });
+});
+document.getElementById('btnStartLocal').addEventListener('click', () => {
+  playClick();
+  onlineMode = false;
+  viewFlipped = false;
+  showChatPanel(false);
+  resetGame();
+  updateToggleButtons();
+  showGame();
+});
+
+/* =========================================================
+   十三、联机
+   ========================================================= */
+const onlineStatusEl = document.getElementById('onlineStatus');
+const onlineActionsEl = document.getElementById('onlineActions');
+const roomSetupBoxEl = document.getElementById('roomSetupBox');
+const roomIdBoxEl = document.getElementById('roomIdBox');
+const roomIdTextEl = document.getElementById('roomIdText');
+const joinInputBoxEl = document.getElementById('joinInputBox');
+const customRoomCodeEl = document.getElementById('customRoomCode');
+const joinPeerIdEl = document.getElementById('joinPeerId');
+
+function genRandomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+function normalizeRoomCode(s) {
+  let t = (s || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (t.startsWith('XQ')) t = t.slice(2);
+  return t;
+}
+function setOnlineStatus(t) { onlineStatusEl.textContent = t; }
+
+function resetHomeOnlineUI() {
+  setOnlineStatus('开启蓝牙网络共享（或同一 WiFi）后，一人创建房间，另一人加入。');
+  onlineActionsEl.style.display = 'flex';
+  roomSetupBoxEl.classList.add('hidden');
+  roomIdBoxEl.classList.add('hidden');
+  joinInputBoxEl.classList.add('hidden');
+  customRoomCodeEl.value = '';
+  joinPeerIdEl.value = '';
+}
+function disconnectAll() {
+  const c = conn, p = peer;
+  conn = null; peer = null;
+  if (c) { try { c.close(); } catch (e) {} }
+  if (p) { try { p.destroy(); } catch (e) {} }
+}
+
+document.getElementById('createRoom').addEventListener('click', () => {
+  if (!window.Peer) { setOnlineStatus('联机模块未加载，请检查网络后刷新页面。'); return; }
+  onlineActionsEl.style.display = 'none';
+  roomIdBoxEl.classList.add('hidden');
+  joinInputBoxEl.classList.add('hidden');
+  roomSetupBoxEl.classList.remove('hidden');
+  setOnlineStatus('设置一个好记的房间码，留空自动生成。');
+  customRoomCodeEl.value = '';
+  setTimeout(() => customRoomCodeEl.focus(), 50);
+});
+document.getElementById('cancelCreateRoom').addEventListener('click', () => {
+  playClick();
+  resetHomeOnlineUI();
+});
+
+document.getElementById('confirmCreateRoom').addEventListener('click', () => {
+  const raw = customRoomCodeEl.value;
+  let code = normalizeRoomCode(raw);
+  if (!code) code = genRandomCode();
+  if (code.length < 4) { setOnlineStatus('房间码至少 4 位，请换一个。'); return; }
+  if (code.length > 12) { setOnlineStatus('房间码最多 12 位。'); return; }
+
+  disconnectAll();
+  setOnlineStatus('正在创建房间…');
+  roomSetupBoxEl.classList.remove('hidden');
+
+  const peerId = 'xq' + code;
+  let attempt = 0;
+  function tryCreate() {
+    if (attempt > 0) {
+      setOnlineStatus('该房间码已被使用，请换一个。');
+      roomSetupBoxEl.classList.remove('hidden');
+      return;
+    }
+    attempt++;
+    peer = new Peer(peerId, { debug: 0 });
+    peer.on('open', () => {
+      isHost = true; myColor = 'r'; onlineMyTurn = true;
+      setOnlineStatus('房间已创建，等待对方加入…');
+      roomSetupBoxEl.classList.add('hidden');
+      roomIdBoxEl.classList.remove('hidden');
+      roomIdTextEl.textContent = code;
+      joinInputBoxEl.classList.add('hidden');
+      peer.on('connection', (c) => {
+        if (conn) { try { c.close(); } catch (e) {} return; }
+        conn = c;
+        bindConnection();
+      });
+    });
+    peer.on('error', (err) => {
+      if (err.type === 'unavailable-id') {
+        try { peer.destroy(); } catch (e) {}
+        peer = null;
+        tryCreate();
+      } else {
+        setOnlineStatus('创建房间失败：' + (err.type || '网络异常'));
+        roomSetupBoxEl.classList.remove('hidden');
+      }
+    });
+  }
+  tryCreate();
+});
+
+document.getElementById('joinRoom').addEventListener('click', () => {
+  onlineActionsEl.style.display = 'none';
+  roomSetupBoxEl.classList.add('hidden');
+  roomIdBoxEl.classList.add('hidden');
+  joinInputBoxEl.classList.remove('hidden');
+  joinPeerIdEl.value = '';
+  setOnlineStatus('输入对方的房间码并点连接。');
+  setTimeout(() => joinPeerIdEl.focus(), 50);
+});
+document.getElementById('cancelJoin').addEventListener('click', () => {
+  playClick();
+  resetHomeOnlineUI();
+});
+
+document.getElementById('confirmJoin').addEventListener('click', () => {
+  if (!window.Peer) { setOnlineStatus('联机模块未加载，请检查网络后刷新页面。'); return; }
+  const code = normalizeRoomCode(joinPeerIdEl.value);
+  if (!code) { setOnlineStatus('请输入对方的房间码。'); return; }
+  if (code.length < 4) { setOnlineStatus('房间码至少 4 位。'); return; }
+
+  disconnectAll();
+  isHost = false; myColor = 'b'; onlineMyTurn = false;
+
+  setOnlineStatus('正在连接…');
+  onlineActionsEl.style.display = 'none';
+  joinInputBoxEl.classList.add('hidden');
+
+  peer = new Peer(null, { debug: 0 });
+  peer.on('open', () => {
+    conn = peer.connect('xq' + code, { reliable: true });
+    bindConnection();
+  });
+  peer.on('error', (err) => {
+    setOnlineStatus('连接失败：' + (err.type || '网络异常') + '，请检查房间码是否正确。');
+    onlineActionsEl.style.display = 'flex';
+    joinInputBoxEl.classList.remove('hidden');
+  });
+});
+
+function bindConnection() {
+  conn.on('open', () => {
+    onlineMode = true;
+    viewFlipped = (myColor === 'b');
+    clearChatMessages();
+    showChatPanel(true);
+    resetGame();
+    updateToggleButtons();
+    showGame();
+    updateUI();
+    draw();
+    addChatMessage('已连接对手，可以开始沟通了。', 'sys');
+  });
+  conn.on('data', (data) => {
+    if (!data || !data.type) return;
+    if (data.type === 'move') applyRemoteMove(data.from, data.to);
+    else if (data.type === 'restart') resetGame();
+    else if (data.type === 'chat') receiveChat(String(data.text || '').slice(0, 80));
+  });
+  conn.on('close', () => {
+    if (!conn) return;
+    conn = null;
+    onlineMode = false;
+    viewFlipped = false;
+    clearChatMessages();
+    showChatPanel(false);
+    showHome();
+    showHomeSub('online');
+    resetHomeOnlineUI();
+    setOnlineStatus('与对方的连接已断开。');
+  });
+  conn.on('error', (err) => {
+    setOnlineStatus('连接出错：' + (err.type || '未知'));
+  });
+}
+
+function applyRemoteMove(from, to) {
+  if (!onlineMode || onlineMyTurn) return;
+  const isCapture = board[to] !== '.';
+  history.push({ board: board.slice(), lastMove });
+  board = makeMove(board, from, to);
+  lastMove = { from, to };
+  clearSelection();
+  playMove(isCapture);
+  const myRed = myColor === 'r';
+  if (allLegalMoves(board, myRed).length === 0) {
+    gameOver = true;
+    resultMsg = isChecked(board, myRed) ? '你被将死了，对方获胜' : '你无子可动，对方获胜';
+    setTimeout(playLose, 240);
+    updateUI(); draw();
+    return;
+  }
+  if (isChecked(board, myRed)) {
+    setTimeout(playCheck, 170);
+    setRule('注意！你的将帅正被将军，必须应将。');
+  }
+  onlineMyTurn = true;
+  updateUI();
+  draw();
+}
+
+function sendMove(from, to) {
+  if (!conn || !conn.open) return;
+  conn.send({ type: 'move', from, to });
+  onlineMyTurn = false;
+}
+
+/* =========================================================
+   十四、启动
+   ========================================================= */
+initBoard();
+draw();
+showChatPanel(false);
+showHome();
+showHomeSub('main');
+updateToggleButtons();
+</script>
+</body>
+</html>
